@@ -1,0 +1,13 @@
+INPUT(
+./debug/main.o
+./debug/moc_nzmqt.o
+./debug/moc_SampleBase.o
+./debug/moc_Subscriber.o
+./debug/moc_Publisher.o
+./debug/moc_Sink.o
+./debug/moc_Worker.o
+./debug/moc_Ventilator.o
+./debug/moc_Requester.o
+./debug/moc_Replier.o
+./debug/moc_NzmqtApp.o
+);

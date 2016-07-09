@@ -1,0 +1,13 @@
+INPUT(
+./release/main.o
+./release/moc_nzmqt.o
+./release/moc_SampleBase.o
+./release/moc_Subscriber.o
+./release/moc_Publisher.o
+./release/moc_Sink.o
+./release/moc_Worker.o
+./release/moc_Ventilator.o
+./release/moc_Requester.o
+./release/moc_Replier.o
+./release/moc_NzmqtApp.o
+);
