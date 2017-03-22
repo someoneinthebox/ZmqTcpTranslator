@@ -11,14 +11,34 @@ class Client : public Ip
 
     QByteArray _data;
     QTcpSocket *_tcpSocket = nullptr;
+    bool _saveData = false;
+    bool _sendSizeInfo = false;    
     QNetworkSession *_networkSession = nullptr;
-public:
-    explicit Client(int port, const QString &host, QObject *parent = 0, bool useForceReconnect = false);
+
+public:    
+    /*!
+     * \brief Client
+     * IP-Client constructor
+     * \param port
+     * Port
+     * \param host
+     * Host
+     * \param useForceReconnect
+     * Use force reconnect if disconnect detected
+     * \param sendSizeInfo
+     * Send size info before sending message
+     * \param saveData
+     * Save the data if disconnect detected
+     */
+    explicit Client(int port, const QString &host, QObject *parent = 0, bool useForceReconnect = false,
+                    bool sendSizeInfo = false, bool saveData = false);
     virtual ~Client(){}
+
 protected slots:
-    virtual void connected(){}
+    virtual void connected() { emit success(); }
     // Ip interface
     void processError(QAbstractSocket::SocketError err);
+
 public slots:
     // Transport interface
     void sendMessage(const QByteArray &message = QByteArray());

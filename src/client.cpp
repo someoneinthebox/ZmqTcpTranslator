@@ -3,8 +3,9 @@
 #include "logger.h"
 #include "client.h"
 
-Client::Client(int port, const QString &host, QObject *parent, bool useForceReconnect)
-    : Ip(port, parent, host, useForceReconnect), _networkSession(0)
+Client::Client(int port, const QString &host, QObject *parent, bool useForceReconnect, bool sendSizeInfo,
+               bool saveData) : Ip(port, parent, host, useForceReconnect),
+    _sendSizeInfo{sendSizeInfo}, _saveData{saveData}, _networkSession(0)
 {
     _tcpSocket = new QTcpSocket(this);
     connect(_tcpSocket, &QTcpSocket::readyRead, [=] { emit recieveMessage(_tcpSocket->readAll()); });
@@ -16,11 +17,13 @@ Client::Client(int port, const QString &host, QObject *parent, bool useForceReco
 
 bool Client::start()
 {
-    _tcpSocket->abort();
+    setHandStop(false);
+    _tcpSocket->disconnectFromHost();
     int p = port();
-    if (p > 0 && p <= std::numeric_limits<quint16>::max()) {
+    if (p > 0 && p <= std::numeric_limits<quint16>::max())
+    {
         _tcpSocket->connectToHost(host(), p);
-        return true;
+        return _tcpSocket->waitForConnected();
     } else
         return false;
 }
@@ -31,22 +34,33 @@ void Client::sendMessage(const QByteArray &message)
         _data = message;
 
     if (_tcpSocket->state() == QAbstractSocket::ConnectedState)
+    {
+        if(_sendSizeInfo && _data.size() > 0)
+        {
+            QByteArray sizeData = QString::number(_data.size()).toUtf8() + "\r\n";
+            _tcpSocket->write(sizeData);
+        }
         _tcpSocket->write(_data);
-}
+    }
 
+    if(!_saveData)
+        _data.clear();
+}
 
 void Client::processError(QAbstractSocket::SocketError err)
 {
     QString s;
-    switch (err) {
+    switch (err)
+    {
     case QAbstractSocket::RemoteHostClosedError:
-        s += tr("Server has closed connection.");
+        s += tr("Сервер закрыл соединение.");
         break;
     case QAbstractSocket::HostNotFoundError:
-        s += tr("Host not found.");
+        s += tr("Хост не найден. Проверьте параметры подключения.");
         break;
     case QAbstractSocket::ConnectionRefusedError:
-        s += tr("Connection refused.");
+        s += tr("Соединение было разорвано другим узлом. Убедитесь, что сервер запущен, и проверьте " \
+                "параметры подключения.");
         break;
     default: s += _tcpSocket->errorString();
     }
@@ -54,15 +68,18 @@ void Client::processError(QAbstractSocket::SocketError err)
 
     emit connectionError();
 
-    if(useForceReconnect()) {
+    if(useForceReconnect() && !handStop())
+    {
         QTimer *timer = new QTimer(this);
+        timer->setSingleShot(true);
         connect(timer, &QTimer::timeout, [=] {
             connect(_tcpSocket, &QTcpSocket::connected, [=] {
-                disconnect(SIGNAL(connected()));
+                disconnect(_tcpSocket, SIGNAL(connected()));
                 _tcpSocket->flush();
                 sendMessage();
             });
-            start();
+            if(!handStop())
+                start();
             timer->deleteLater();
         });
         timer->start(1000);
@@ -71,6 +88,8 @@ void Client::processError(QAbstractSocket::SocketError err)
 
 bool Client::stop()
 {
-    _tcpSocket->abort();
+    setHandStop(true);
+    _tcpSocket->disconnectFromHost();
+    emit stopped();
     return true;
 }

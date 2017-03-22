@@ -9,6 +9,7 @@ class Ip : public Transport
     Q_OBJECT
     QString _host;
     quint16 _port;
+
 public:
     explicit Ip(quint16 port, QObject *parent = 0,
                 const QString &host = "localhost", bool useForceReconnect = false)
@@ -16,9 +17,15 @@ public:
     virtual ~Ip(){}
     QString host() const { return _host; }
     quint16 port() { return _port; }
+
 signals:
+
 protected slots:
     virtual void processError(QAbstractSocket::SocketError err) { Q_UNUSED(err) }
+
+public slots:
+    void setPort(quint16 port) { _port = port; }
+    void setHost(const QString &host) { _host = host; }
 };
 
 #endif

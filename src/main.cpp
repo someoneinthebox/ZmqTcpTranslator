@@ -21,7 +21,9 @@ int processArgs(int argc, char *argv[])
                                "\n\t\t\t  Default, 9380;\n");
             out << QObject::tr("\t-topic <topic>\t: filter topic."
                                "\n\t\t\t  Default is empty;\n");
-            out << QObject::tr("\t-uselogs 1\t: write log\n\n");
+            out << QObject::tr("\t-ignore <key1,key2,...,keyN>\t: ignore some keys;\n");
+            out << QObject::tr("\t-uselogs 1\t: write log;\n");
+            out << QObject::tr("\t-usesendsize\t: send a package size at the start;\n\n");
             out << QObject::tr("\n%s -[i|u|e|s|v|h]\n"
                                "\t-i(nstall) [account] [password]\t: Install the service, optionally using given account and password\n"
                                "\t-u(ninstall)\t: Uninstall the service.\n"
@@ -49,7 +51,11 @@ int main(int argc, char *argv[])
 {
     int result = processArgs(argc, argv);
     if(result > 0) {
-        Translator a(argc, argv, "ZmqTcpTranslator");
+        QString fullVer = QString(QString::number(NVER1) + "."
+                + QString::number(NVER2) + "."
+                + QString::number(NVER3) + "."
+                + QString::number(NVER4));
+        Translator a(argc, argv, "ZmqTcpTranslator_ver." + fullVer);
         return a.exec();
     }
 

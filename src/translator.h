@@ -14,16 +14,21 @@ class Translator : public QtService<QCoreApplication>
         OutServer,
         OutPort,
         WriteLog,
-        Topic
+        Topic,
+        IgnoreList,
+        UseSendSize
     };
 
-    QStringList _serviceCommands { "-zmqserver", "-zmqport", "-outserver", "-outport", "-uselogs", "-topic" };
+    QStringList _serviceCommands { "-zmqserver", "-zmqport", "-outserver", "-outport", "-uselogs", "-topic",
+                                   "-ignore", "-usesendsize" };
 
     QString _zmqHost = "localhost";
     quint16 _zmqPort = 5007;
     QString _outHost = "localhost";
     quint16 _outPort = 9380;
     QString _topic = "";
+    QStringList _ignoreList;
+    bool _useSendSizePack = false;
 
     ZmqSub *_subsriber = nullptr;
     nzmqt::ZMQContext *_cnt;

@@ -1,27 +1,27 @@
 #include "zmqsub.h"
+#include <QJsonDocument>
+#include <QJsonObject>
 
-ZmqSub::ZmqSub(nzmqt::ZMQContext &cnt, quint16 port, const QString &host, const QString &topic,
-               QObject *parent)
-    : ZmqBase(port, host, parent), _topic{topic}
+void ZmqSub::availableMsg(const QList<QByteArray> &message)
 {
-    _socket = cnt.createSocket(nzmqt::ZMQSocket::TYP_SUB, this);
-    _socket->setObjectName("Subscriber.Socket.socket(SUB)");
-    connect(_socket, SIGNAL(messageReceived(const QList<QByteArray>&)),
-            this, SLOT(messageReceived(const QList<QByteArray>&)));
-}
+    QByteArray arr = message.join();
 
-void ZmqSub::messageReceived(const QList<QByteArray> &message)
-{
-    QByteArray arr;
-    foreach(QByteArray msg, message)
-        arr.append(msg);
+    if(_ignoreList.size() > 0)
+    {
+        QJsonObject obj = QJsonDocument::fromJson(arr).object();
+
+        foreach(QString key, _ignoreList)
+            obj.remove(key);
+
+        QJsonDocument doc(obj);
+        arr = doc.toJson(QJsonDocument::Compact);
+    }
 
     emit recieveMessage(arr);
 }
 
 void ZmqSub::startImpl()
 {
-    QString fullAddress = "tcp://" + QString(host() + ":%1").arg(QString::number((int) port()));
-    _socket->subscribeTo(_topic);
-    _socket->connectTo(fullAddress);
+    socket()->subscribeTo(topic());
+    socket()->connectTo(fullAddress());
 }

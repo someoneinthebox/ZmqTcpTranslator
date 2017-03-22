@@ -22,27 +22,42 @@ void Translator::start()
     QCoreApplication *app = application();
     _cnt = nzmqt::createDefaultContext();
     _cnt->start();
-    _client = new Client(_outPort, _outHost, app, true);
-    if(_client->start()) {
-        _subsriber = new ZmqSub(*_cnt, _zmqPort, _zmqHost, _topic, app);
-        if(_useLogs) {
-            QObject::connect(_subsriber, &ZmqSub::failure, [=] (const QString &what)
-            {
-                if(_logFile->open(QIODevice::Append)) {
-                    _logFile->write(QString("ZMQ error:\t%1\r\n").arg(what).toUtf8());
-                    _logFile->close();
-                }
-            });
-        }
-        QObject::connect(_subsriber, &ZmqSub::recieveMessage, _client, &Client::sendMessage);
-        _subsriber->start();
+    _client = new Client(_outPort, _outHost, app, true, _useSendSizePack);
+    _subsriber = new ZmqSub(*_cnt, _zmqPort, _zmqHost, _topic, _ignoreList, app);
+    if(_useLogs)
+    {
+        QObject::connect(_client, &Client::connectionError, [=]
+        {
+            if(_logFile->open(QIODevice::Append)) {
+                _logFile->write(QString("Server connection error.\r\n").toUtf8());
+                _logFile->close();
+            }
+        });
+        QObject::connect(_subsriber, &ZmqSub::failure, [=] (const QString &what)
+        {
+            if(_logFile->open(QIODevice::Append)) {
+                _logFile->write(QString("ZMQ Service error:\t%1\r\n").arg(what).toUtf8());
+                _logFile->close();
+            }
+        });
+        QObject::connect(_subsriber, &ZmqSub::success, [=]
+        {
+            if(_logFile->open(QIODevice::Append)) {
+                _logFile->write(QString("ZMQ success").toUtf8());
+                _logFile->close();
+            }
+        });
+        QObject::connect(_subsriber, &ZmqSub::recieveMessage, [=] (const QByteArray &arr)
+        {
+            if(_logFile->open(QIODevice::Append)) {
+                _logFile->write(QString("Package recieved, size: %1\r\n").arg(arr.size()).toUtf8());
+                _logFile->close();
+            }
+        });
     }
-    else {
-        if(_logFile->open(QIODevice::Append)) {
-            _logFile->write("Connection error.\r\n");
-            _logFile->close();
-        }
-    }
+    QObject::connect(_subsriber, &ZmqSub::recieveMessage, _client, &Client::sendMessage);
+    _client->start();
+    _subsriber->start();
 }
 
 void Translator::stop()
@@ -84,6 +99,10 @@ void Translator::createApplication(int &argc, char **argv)
             case ServCommands::WriteLog: _useLogs = QString(arguments.at(i + 1)).toInt() == 1;
                 break;
             case ServCommands::Topic: _topic = QString(arguments.at(i + 1));
+                break;
+            case ServCommands::IgnoreList: _ignoreList = QString(arguments.at(i + 1)).split(",");
+                break;
+            case ServCommands::UseSendSize: _useSendSizePack = true;
                 break;
             default:{}
             }

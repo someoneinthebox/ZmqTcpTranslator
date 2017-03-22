@@ -1,25 +1,26 @@
 #ifndef ZMQSUB_H
 #define ZMQSUB_H
 
-#include "zmqbase.h"
+#include "zmqpubsubbase.h"
 
-class ZmqSub : public ZmqBase
+class ZmqSub : public ZmqPubSubBase
 {
     Q_OBJECT
 
-    nzmqt::ZMQSocket *_socket;
-    QString _topic;
+    QStringList _ignoreList;
 
 protected:
     void startImpl();
 
 public:
     explicit ZmqSub(nzmqt::ZMQContext &cnt, quint16 port, const QString &host = "localhost",
-                    const QString &topic = QString(""), QObject *parent = 0);
+                    const QString &topic = QString(""), QStringList ignoreList = QStringList(),
+                    QObject *parent = 0)
+        : ZmqPubSubBase(nzmqt::ZMQSocket::TYP_SUB, cnt, port, host, topic, parent), _ignoreList{ignoreList}{}
     virtual ~ZmqSub(){}
 
-public slots:
-    void messageReceived(const QList<QByteArray>& message);
+protected slots:
+    void availableMsg(const QList<QByteArray> &message);
 
 };
 
