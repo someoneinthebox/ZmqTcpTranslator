@@ -17,6 +17,6 @@ For installation the service run *cmd* (**as Administrator**), and run tcprectra
 
 To start the service - just start it from Windows Service manager. If you want to run service with specific parameters, you can find them in <a href="https://github.com/someoneinthebox/ZmqTcpTranslator/wiki" target="_blank"><b>wiki</b></a>.
 
-# Where is logs are?
+# Where are the logs?
 
 By default, logs location is *system32* folder (for x64 - *SYSWOW64*).
